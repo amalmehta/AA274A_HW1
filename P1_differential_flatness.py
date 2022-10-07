@@ -69,8 +69,7 @@ def compute_traj(coeffs: np.ndarray, tf: float, N: int) -> T.Tuple[np.ndarray, n
     traj = np.zeros((N, 7))
     ########## Code starts here ##########
     x_1, x_2, x_3, x_4, y_1, y_2, y_3, y_4 = coeffs
-    for timestep in t:
-        timestep = int(timestep)
+    for idx, timestep in enumerate(t):
         x = x_1 + x_2*timestep + x_3*timestep**2 + x_4*timestep**3
         y = y_1 + y_2*timestep + y_3*timestep**2 + y_4*timestep**3
         x_dot = x_2 + 2*x_3*timestep + 3*x_4*timestep**2
@@ -78,7 +77,7 @@ def compute_traj(coeffs: np.ndarray, tf: float, N: int) -> T.Tuple[np.ndarray, n
         th = np.arctan(y_dot/x_dot)
         x_ddot = 2*x_3 + 6*x_4*timestep
         y_ddot = 2*y_3 + 6*y_4*timestep
-        traj[timestep] = [x, y, th, x_dot, y_dot, x_ddot, y_ddot]
+        traj[idx] = [x, y, th, x_dot, y_dot, x_ddot, y_ddot]
 
 
 
@@ -98,7 +97,7 @@ def compute_controls(traj: np.ndarray) -> T.Tuple[np.ndarray, np.ndarray]:
     V = np.zeros((N))
     om =  np.zeros((N))
 
-    for t in range(traj.shape[1]):
+    for t in range(N):
         x, y, th, x_dot, y_dot, x_ddot, y_ddot = traj[t]
 
         J = np.array([[np.cos(th), -y_dot],[np.sin(th), x_dot]])
