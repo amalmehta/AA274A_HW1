@@ -42,12 +42,12 @@ def compute_traj_coeffs(initial_state: State, final_state: State, tf: float) -> 
     A = np.array([[1, 0, 0, 0, 0,0,0,0],
                   [0, 1, 0, 0, 0, 0, 0,0],
                   [1, tf, tf**2, tf**3, 0,0,0,0],
-                  [0, tf, 2*tf, 3*tf**2, 0, 0, 0,0],
+                  [0, 1, 2*tf, 3*tf**2, 0, 0, 0,0],
                   [0,0,0,0,1,0, 0, 0],
                   [0,0,0,0,0,1, 0, 0],
                   [0,0,0,0,1,tf, tf**2, tf**3],
-                  [0,0,0,0,0,tf, 2*tf, 3*tf**2]])
-    A = np.reshape(A,(8,8))
+                  [0,0,0,0,0,1, 2*tf, 3*tf**2]])
+    #A = np.reshape(A,(8,8))
     b = np.array([x_i, xd_i, x_f, xd_f, y_i, yd_i, y_f, yd_f])
     b =np.reshape(b,(8,))
     coeffs = np.linalg.solve(A, b)
@@ -95,8 +95,8 @@ def compute_controls(traj: np.ndarray) -> T.Tuple[np.ndarray, np.ndarray]:
         om (np.array shape [N]) om at each point of traj
     """
     ########## Code starts here ##########
-    V = np.zeros((N,))
-    om =  np.zeros((N,))
+    V = np.zeros((N))
+    om =  np.zeros((N))
 
     for t in range(traj.shape[1]):
         x, y, th, x_dot, y_dot, x_ddot, y_ddot = traj[t]
@@ -104,8 +104,9 @@ def compute_controls(traj: np.ndarray) -> T.Tuple[np.ndarray, np.ndarray]:
         J = np.array([[np.cos(th), -y_dot],[np.sin(th), x_dot]])
         J_inv = np.linalg.inv(J)
         b = np.array([x_ddot, y_ddot])
+
         a_curr, om_curr = J_inv @ b
-        V[t] = x_dot*np.arccos(th)
+        V[t] = x_dot*(1.0/np.cos(th))
         om[t] = om_curr
 
     ########## Code ends here ##########
