@@ -152,12 +152,9 @@ def rescale_V(V: np.ndarray, om: np.ndarray, V_max: float, om_max: float) -> np.
           epsilon (e.g. 1e-6) to the denomenator
     """
     ########## Code starts here ##########
-    Vmax_arr = [V_max] * V.shape[0]
-    V_tilde = np.minimum(V, Vmax_arr)
+    V_tilde = np.maximum(np.minimum(V, V_max), -V_max)
     V_tilde = np.where(om > om_max, V_tilde*(om_max/(om+1e-6)), V_tilde)
-    #omax_arr = [om_max] * om.shape[0]
-    print(len(V_tilde))
-
+    V_tilde = np.where(om < -om_max, V_tilde*(om_max/(-om+1e-6)), V_tilde)
     ########## Code ends here ##########
     return V_tilde
 
