@@ -38,9 +38,10 @@ class PoseController:
         """
         ########## Code starts here ##########
         row = np.sqrt((x-self.x_g)**2 + (y-self.y_g)**2)
-        th_al = np.arctan(abs(y-self.y_g)/abs(x-self.x_g))
-        al = th_al - th
-        delta = th_al - self.th_g
+        print(abs(y-self.y_g)/abs(x-self.x_g+1e-6))
+        th_al = np.arctan(abs(y-self.y_g)/(1e-6+abs(x-self.x_g)))
+        al = wrapToPi(th_al - th)
+        delta = wrapToPi(th_al - self.th_g)
         V = self.k1*row*np.cos(al)
         om = self.k2*al + self.k1*(al+self.k3*delta)*(np.sin(al)*np.cos(al))/(al)
         ########## Code ends here ##########
