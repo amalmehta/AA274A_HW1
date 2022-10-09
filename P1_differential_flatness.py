@@ -127,6 +127,7 @@ def compute_arc_length(V: np.ndarray, t: np.ndarray) -> np.ndarray:
     s = None
     ########## Code starts here ##########
     s = cumtrapz(V, x= t, initial = 0)
+    print(len(s))
     ########## Code ends here ##########
     return s
 
@@ -155,6 +156,7 @@ def rescale_V(V: np.ndarray, om: np.ndarray, V_max: float, om_max: float) -> np.
     V_tilde = np.minimum(V, Vmax_arr)
     V_tilde = np.where(om > om_max, V_tilde*(om_max/(om+1e-6)), V_tilde)
     #omax_arr = [om_max] * om.shape[0]
+    print(len(V_tilde))
 
     ########## Code ends here ##########
     return V_tilde
@@ -172,7 +174,8 @@ def compute_tau(V_tilde: np.ndarray, s: np.ndarray) -> np.ndarray:
     Hint: Use the function cumtrapz. This should take one line.
     """
     ########## Code starts here ##########
-    tau = cumtrapz(1.0/V_tilde, s)
+    tau = cumtrapz(1.0/V_tilde, s, initial = 0)
+    print(len(tau))
     ########## Code ends here ##########
     return tau
 
