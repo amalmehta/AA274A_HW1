@@ -94,6 +94,7 @@ def compute_controls(traj: np.ndarray) -> T.Tuple[np.ndarray, np.ndarray]:
         om (np.array shape [N]) om at each point of traj
     """
     ########## Code starts here ##########
+    N = traj.shape[0]
     V = np.zeros((N))
     om =  np.zeros((N))
 
@@ -152,7 +153,7 @@ def rescale_V(V: np.ndarray, om: np.ndarray, V_max: float, om_max: float) -> np.
           epsilon (e.g. 1e-6) to the denomenator
     """
     ########## Code starts here ##########
-    V_tilde = np.maximum(np.minimum(V, V_max), -V_max)
+    V_tilde = np.clip(V, -V_max, V_max)
     V_tilde = np.where(om > om_max, V_tilde*(om_max/(om+1e-6)), V_tilde)
     V_tilde = np.where(om < -om_max, V_tilde*(om_max/(-om+1e-6)), V_tilde)
     ########## Code ends here ##########
