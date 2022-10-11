@@ -1,5 +1,5 @@
 import typing as T
-
+import math
 import numpy as np
 from utils import wrapToPi
 
@@ -37,13 +37,27 @@ class PoseController:
         may also be useful, look up its documentation
         """
         ########## Code starts here ##########
-        row = np.sqrt((x-self.x_g)**2 + (y-self.y_g)**2)
-        print(abs(y-self.y_g)/abs(x-self.x_g+1e-6))
-        th_al = np.arctan(abs(y-self.y_g)/(1e-6+abs(x-self.x_g)))
+        x_diff = self.x_g-x
+        y_diff = self.y_g-y
+       
+        rho = np.sqrt(x_diff**2 + y_diff**2)
+
+        
+        #th_al = 0
+        #if y_diff < 0 and x_diff < 0:
+        #    th_al = -np.pi/2
+        #if x_diff < 0 and y_diff > 0:
+        #    th_al = np.pi/2
+        
+        th_al = np.arctan2(y_diff,1e-8+x_diff)
         al = wrapToPi(th_al - th)
         delta = wrapToPi(th_al - self.th_g)
-        V = self.k1*row*np.cos(al)
-        om = self.k2*al + self.k1*(al+self.k3*delta)*(np.sin(al)*np.cos(al))/(al)
+        if rho < RHO_THRES and al < ALPHA_THRES and delta < DELTA_THRES:
+            V = 0
+            om = 0 
+        else: 
+            V = self.k1*rho*np.cos(al)
+            om = self.k2*al + self.k1*(np.sinc(al/np.pi)*np.cos(al))*(al+self.k3*delta)
         ########## Code ends here ##########
 
         # apply control limits
