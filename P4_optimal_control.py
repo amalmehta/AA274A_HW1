@@ -65,7 +65,112 @@ def optimize_trajectory(
     # `pack_decision_variables` and `unpack_decision_variables` useful.
 
     # WRITE YOUR CODE BELOW ###################################################
-    raise NotImplementedError
+    z_shape = 1 + (N + 1) * s_dim + N * u_dim
+    print(z_shape)
+    def get_bounds():
+        bounds = [0]*z_shape
+        bounds[0] = (0, None)
+        bounds[1:1+(N+1)*s_dim] = [(None, None)]*int((N+1)*s_dim)
+        bounds[1+(N+1)*s_dim:1+(N+1)*s_dim + (N)*u_dim:2] = [(-v_max, v_max)]*int((N)*u_dim/2) # clean this up with om_max later
+        bounds[2+(N+1)*s_dim:1+(N+1)*s_dim + (N)*u_dim:2] = [(-om_max, om_max)]*int((N)*u_dim/2)
+        print(bounds)
+
+    #constraints
+    def x0_constraint(z):
+        t_f, s, u = unpack_decision_variables(z)
+        x, y, th = s[:, 0], s[:, 1], s[:,2]
+        return x[0]
+    def xf_constraint(z):
+        t_f, s, u = unpack_decision_variables(z)
+        x, y, th = s[:, 0], s[:, 1], s[:,2]
+        return x[-1]-5
+    def y0_constraint(z):
+        t_f, s, u = unpack_decision_variables(z)
+        x, y, th = s[:, 0], s[:, 1], s[:,2]
+        return y[0]
+    def yf_constraint(z):
+        t_f, s, u = unpack_decision_variables(z)
+        x, y, th = s[:, 0], s[:, 1], s[:,2]
+        return y[-1]-5
+    def th0_constraint(z):
+        t_f, s, u = unpack_decision_variables(z)
+        x, y, th = s[:, 0], s[:, 1], s[:,2]
+        return th[0]+np.pi/2
+    def thf_constraint(z):
+        t_f, s, u = unpack_decision_variables(z)
+        x, y, th = s[:, 0], s[:, 1], s[:,2]
+        return th[-1]+np.pi/2
+    def x_dyn_constraint(z):
+        t_f, s, u = unpack_decision_variables(z)
+        x, y, th = s[:, 0], s[:, 1], s[:,2]
+        t_interval = t_f/N
+        V = u[:, 0]
+        om = u[:, 1]
+        total = 0 
+        for i in range(1,N):
+            xdot_i = V[i-1]*np.cos(th[i-1])
+            total += x[i]-x[i-1] -t_interval*xdot_i
+        return total
+
+
+
+
+    def y_dyn_constraint(z):
+        t_f, s, u = unpack_decision_variables(z)
+        x, y, th = s[:, 0], s[:, 1], s[:,2]
+        t_interval = t_f/N
+        V = u[:, 0]
+        om = u[:, 1]
+        total = 0 
+        for i in range(1,N):
+            ydot_i = V[i-1]*np.sin(th[i-1])
+            total += y[i]-y[i-1] -t_interval*ydot_i
+        return total
+
+    def th_dyn_constraint(z):
+        t_f, s, u = unpack_decision_variables(z)
+        x, y, th = s[:, 0], s[:, 1], s[:,2]
+        t_interval = t_f/N
+        V = u[:, 0]
+        om = u[:, 1]
+        total = 0
+        for i in range(1,N):
+            total += th[i]-th[i-1]-t_interval*om[i-1]
+        return total
+
+
+    
+
+
+
+    def cost(z):
+        t_f, s, u = unpack_decision_variables(z)
+        t_interval = t_f/N
+        J = 0
+
+        for idx in range(N):
+            u_curr = u[idx]
+            J += t_interval*(time_weight + u_curr[0]**2 + u_curr[1]**2)
+        return J
+    init_guess = np.zeros((z_shape,))
+    init_guess[0] = 10
+    bds = get_bounds()
+    cons = ({'type':'eq', 'fun': x0_constraint},
+                {'type':'eq', 'fun': xf_constraint},
+                {'type':'eq', 'fun': y0_constraint},
+                {'type':'eq', 'fun': yf_constraint},
+                {'type':'eq', 'fun': th0_constraint},
+                {'type':'eq', 'fun': thf_constraint},
+                {'type':'eq', 'fun': x_dyn_constraint},
+                {'type':'eq', 'fun': y_dyn_constraint},
+                {'type':'eq', 'fun': th_dyn_constraint},
+                )
+    res = minimize(cost, x0=init_guess, bounds =bds, constraints=cons)
+    t_f, s, u = unpack_decision_variables(res.x)
+    print(s)
+    return t_f, s, u
+    #lambda t_f, s, u: time_weight + 
+    #raise NotImplementedError
     ###########################################################################
 
 
