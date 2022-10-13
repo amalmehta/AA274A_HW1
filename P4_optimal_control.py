@@ -66,14 +66,13 @@ def optimize_trajectory(
 
     # WRITE YOUR CODE BELOW ###################################################
     z_shape = 1 + (N + 1) * s_dim + N * u_dim
-    print(z_shape)
     def get_bounds():
         bounds = [0]*z_shape
         bounds[0] = (0, None)
         bounds[1:1+(N+1)*s_dim] = [(None, None)]*int((N+1)*s_dim)
         bounds[1+(N+1)*s_dim:1+(N+1)*s_dim + (N)*u_dim:2] = [(-v_max, v_max)]*int((N)*u_dim/2) # clean this up with om_max later
         bounds[2+(N+1)*s_dim:1+(N+1)*s_dim + (N)*u_dim:2] = [(-om_max, om_max)]*int((N)*u_dim/2)
-        print(bounds)
+        return bounds
 
     #constraints
     def x0_constraint(z):
