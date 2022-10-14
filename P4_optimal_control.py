@@ -78,41 +78,46 @@ def optimize_trajectory(
     def x0_constraint(z):
         t_f, s, u = unpack_decision_variables(z)
         x, y, th = s[:, 0], s[:, 1], s[:,2]
-        return x[0]
+        return x[0]-s_0[0]
     def xf_constraint(z):
         t_f, s, u = unpack_decision_variables(z)
         x, y, th = s[:, 0], s[:, 1], s[:,2]
-        return x[-1]-5
+        return x[-1]-s_f[0]
     def y0_constraint(z):
         t_f, s, u = unpack_decision_variables(z)
         x, y, th = s[:, 0], s[:, 1], s[:,2]
-        return y[0]
+        return y[0]-s_0[1]
     def yf_constraint(z):
         t_f, s, u = unpack_decision_variables(z)
         x, y, th = s[:, 0], s[:, 1], s[:,2]
-        return y[-1]-5
+        return y[-1]-s_f[1]
     def th0_constraint(z):
         t_f, s, u = unpack_decision_variables(z)
         x, y, th = s[:, 0], s[:, 1], s[:,2]
-        return th[0]+np.pi/2
+        return th[0]-s_0[2]
     def thf_constraint(z):
         t_f, s, u = unpack_decision_variables(z)
         x, y, th = s[:, 0], s[:, 1], s[:,2]
-        return th[-1]+np.pi/2
+        return th[-1]-s_0[2]
     def x_dyn_constraint(z):
         t_f, s, u = unpack_decision_variables(z)
         x, y, th = s[:, 0], s[:, 1], s[:,2]
         t_interval = t_f/N
         V = u[:, 0]
         om = u[:, 1]
-        total = 0 
+        #total = 0 
         #for i in range(1,N):
         #    xdot_i = V[i-1]*np.cos(th[i-1])
         #    total += x[i]-x[i-1] -t_interval*xdot_i
-        for i in range(N):
-            xdot_i = V[i]*np.cos(th[i])
-            total += x[i+1]-x[i] -t_interval*xdot_i
-        return total
+        #for i in range(N):
+        #    xdot_i = V[i]*np.cos(th[i])
+        #    total += x[i+1]-x[i] -t_interval*xdot_i
+        x_i_plus1 = x[1:]
+        x_i = x[:-1]
+        th_i = th[:-1]
+        x_doti = V*np.cos(th_i)
+        diff_vec = x_i_plus1 - x_i - t_interval*x_doti
+        return diff_vec
 
 
 
@@ -123,14 +128,20 @@ def optimize_trajectory(
         t_interval = t_f/N
         V = u[:, 0]
         om = u[:, 1]
-        total = 0 
+        
+        #total = 0 
         #for i in range(1,N):
         #    xdot_i = V[i-1]*np.cos(th[i-1])
         #    total += x[i]-x[i-1] -t_interval*xdot_i
-        for i in range(N):
-            ydot_i = V[i]*np.sin(th[i])
-            total += y[i+1]-y[i] -t_interval*ydot_i
-        return total
+        #for i in range(N):
+        #    ydot_i = V[i]*np.sin(th[i])
+        #    total += y[i+1]-y[i] -t_interval*ydot_i
+        y_i_plus1 = y[1:]
+        y_i = y[:-1]
+        th_i = th[:-1]
+        y_doti = V*np.cos(th_i)
+        diff_vec = y_i_plus1 - y_i - t_interval*y_doti
+        return diff_vec
 
     def th_dyn_constraint(z):
         t_f, s, u = unpack_decision_variables(z)
@@ -138,12 +149,31 @@ def optimize_trajectory(
         t_interval = t_f/N
         V = u[:, 0]
         om = u[:, 1]
-        total = 0
+        #total = 0
         #for i in range(1,N):
         #    total += th[i]-th[i-1]-t_interval*om[i-1]
+        #for i in range(N):
+        #    total += th[i+1]-th[i]-t_interval*om[i]
+        th_i_plus1 = th[1:]
+        th_i = th[:-1]
+        diff_vec = th_i_plus1-th_i-t_interval*om
+        return diff_vec
+    #from lec 3 code
+    def d(s, u):
+        x, y, th = s[0], s[1], s[2]
+        V, om= u[0], u[1]
+        return np.array([V*np.cos(th), V*np.sin(th),om])
+    #from lec 3 code
+    def constraints(z):
+        t_f, s, u = unpack_decision_variables(z)
+        x, y, th = s[:, 0], s[:, 1], s[:,2]
+        t_interval = t_f/N
+        V = u[:, 0]
+        om = u[:, 1]
+        constraint_list = []
         for i in range(N):
-            total += th[i+1]-th[i]-t_interval*om[i]
-        return total
+            constraint_list.append(s[i + 1] - (s[i] + t_interval * d(s[i], u[i])))
+        return np.concatenate(constraint_list)
 
 
     
@@ -159,8 +189,8 @@ def optimize_trajectory(
             u_curr = u[idx]
             J += t_interval*(time_weight + u_curr[0]**2 + u_curr[1]**2)
         return J
-    init_guess = np.ones((z_shape,))
-    init_guess[0] = 50
+    init_guess = np.ones((z_shape,))*0.0001
+    init_guess[0] = 100
     init_guess[1:1+(N+1)*s_dim] = np.linspace(s_0, s_f, N+1).ravel()
     bds = get_bounds()
     print(len(bds))
@@ -173,9 +203,10 @@ def optimize_trajectory(
                 {'type':'eq', 'fun': yf_constraint},
                 {'type':'eq', 'fun': th0_constraint},
                 {'type':'eq', 'fun': thf_constraint},
-                {'type':'eq', 'fun': x_dyn_constraint},
-                {'type':'eq', 'fun': y_dyn_constraint},
-                {'type':'eq', 'fun': th_dyn_constraint},
+                {'type':'eq', 'fun': constraints}
+                #{'type':'eq', 'fun': x_dyn_constraint},
+                #{'type':'eq', 'fun': y_dyn_constraint},
+                #{'type':'eq', 'fun': th_dyn_constraint},
                 )
     res = minimize(cost, x0=init_guess, bounds =bds, constraints=cons,options={'maxiter': 1000})
     t_f, s, u = unpack_decision_variables(res.x)
