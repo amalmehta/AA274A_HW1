@@ -74,7 +74,7 @@ def compute_traj(coeffs: np.ndarray, tf: float, N: int) -> T.Tuple[np.ndarray, n
         y = y_1 + y_2*timestep + y_3*timestep**2 + y_4*timestep**3
         x_dot = x_2 + 2*x_3*timestep + 3*x_4*timestep**2
         y_dot = y_2 + 2*y_3*timestep + 3*y_4*timestep**2
-        th = np.arctan(y_dot/x_dot)
+        th = np.arctan2(y_dot,x_dot)
         x_ddot = 2*x_3 + 6*x_4*timestep
         y_ddot = 2*y_3 + 6*y_4*timestep
         traj[idx] = [x, y, th, x_dot, y_dot, x_ddot, y_ddot]
@@ -106,7 +106,9 @@ def compute_controls(traj: np.ndarray) -> T.Tuple[np.ndarray, np.ndarray]:
         b = np.array([x_ddot, y_ddot])
 
         a_curr, om_curr = J_inv @ b
-        V[t] = x_dot*(1.0/np.cos(th))
+        #print(np.linalg.det(J))
+        #print(y_dot*(1.0/np.sin(th)))
+        V[t] = np.linalg.det(J)#y_dot*(1.0/np.sin(th))#x_dot*(1.0/np.cos(th))
         om[t] = om_curr
 
     ########## Code ends here ##########
@@ -128,7 +130,7 @@ def compute_arc_length(V: np.ndarray, t: np.ndarray) -> np.ndarray:
     s = None
     ########## Code starts here ##########
     s = cumtrapz(V, x= t, initial = 0)
-    print(len(s))
+    #print(len(s))
     ########## Code ends here ##########
     return s
 
@@ -173,7 +175,7 @@ def compute_tau(V_tilde: np.ndarray, s: np.ndarray) -> np.ndarray:
     """
     ########## Code starts here ##########
     tau = cumtrapz(1.0/V_tilde, s, initial = 0)
-    print(len(tau))
+    #print(len(tau))
     ########## Code ends here ##########
     return tau
 
