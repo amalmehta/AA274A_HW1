@@ -36,7 +36,6 @@ def compute_traj_coeffs(initial_state: State, final_state: State, tf: float) -> 
     Hint: Use the np.linalg.solve function.
     """
     ########## Code starts here ##########
-    #writing A matrix
     x_i, y_i, V_i, th_i, xd_i, yd_i = initial_state.x, initial_state.y, initial_state.V, initial_state.th, initial_state.xd, initial_state.yd
     x_f, y_f, V_f, th_f, xd_f, yd_f = final_state.x, final_state.y, final_state.V, final_state.th, final_state.xd, final_state.yd
     A = np.array([[1, 0, 0, 0, 0,0,0,0],
@@ -47,9 +46,8 @@ def compute_traj_coeffs(initial_state: State, final_state: State, tf: float) -> 
                   [0,0,0,0,0,1, 0, 0],
                   [0,0,0,0,1,tf, tf**2, tf**3],
                   [0,0,0,0,0,1, 2*tf, 3*tf**2]])
-    #A = np.reshape(A,(8,8))
     b = np.array([x_i, xd_i, x_f, xd_f, y_i, yd_i, y_f, yd_f])
-    b =np.reshape(b,(8,))
+    b = np.reshape(b,(8,))
     coeffs = np.linalg.solve(A, b)
     ########## Code ends here ##########
     return coeffs
@@ -79,8 +77,6 @@ def compute_traj(coeffs: np.ndarray, tf: float, N: int) -> T.Tuple[np.ndarray, n
         y_ddot = 2*y_3 + 6*y_4*timestep
         traj[idx] = [x, y, th, x_dot, y_dot, x_ddot, y_ddot]
 
-
-
     ########## Code ends here ##########
 
     return t, traj
@@ -97,7 +93,6 @@ def compute_controls(traj: np.ndarray) -> T.Tuple[np.ndarray, np.ndarray]:
     N = traj.shape[0]
     V = np.zeros((N))
     om =  np.zeros((N))
-
     for t in range(N):
         x, y, th, x_dot, y_dot, x_ddot, y_ddot = traj[t]
 
@@ -106,9 +101,7 @@ def compute_controls(traj: np.ndarray) -> T.Tuple[np.ndarray, np.ndarray]:
         b = np.array([x_ddot, y_ddot])
 
         a_curr, om_curr = J_inv @ b
-        #print(np.linalg.det(J))
-        #print(y_dot*(1.0/np.sin(th)))
-        V[t] = np.linalg.det(J)#y_dot*(1.0/np.sin(th))#x_dot*(1.0/np.cos(th))
+        V[t] = np.linalg.det(J)
         om[t] = om_curr
 
     ########## Code ends here ##########
@@ -130,7 +123,6 @@ def compute_arc_length(V: np.ndarray, t: np.ndarray) -> np.ndarray:
     s = None
     ########## Code starts here ##########
     s = cumtrapz(V, x= t, initial = 0)
-    #print(len(s))
     ########## Code ends here ##########
     return s
 
@@ -175,7 +167,6 @@ def compute_tau(V_tilde: np.ndarray, s: np.ndarray) -> np.ndarray:
     """
     ########## Code starts here ##########
     tau = cumtrapz(1.0/V_tilde, s, initial = 0)
-    #print(len(tau))
     ########## Code ends here ##########
     return tau
 
